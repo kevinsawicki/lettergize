@@ -15,26 +15,23 @@ app = express()
 app.get '*', (request, response) ->
   if src = request.query.src
     fetchImage src, (error, image) ->
-      if error?
-        response.status(400).send(error.message)
-      else
-        if request.query.type is 'emoji'
-          renderEmojiImage(image, request, response)
-        else
-          renderAsciiImage(image, request, response)
+      renderImage(error, image, request, response)
   else if emailAddress = request.path[1..]
     fetchAvatar emailAddress, (error, avatar) ->
-      if error?
-        response.status(400).send(error.message)
-      else
-        if request.query.type is 'emoji'
-          renderEmojiImage(image, request, response)
-        else
-          renderAsciiImage(image, request, response)
+      renderImage(error, avatar, request, response)
   else
     response.status(400).send('Bad request')
 
 app.listen(process.env.PORT or 3000)
+
+renderImage = (error, image, request, response) ->
+  if error?
+    response.status(400).send(error.message)
+  else
+    if request.query.type is 'emoji'
+      renderEmojiImage(image, request, response)
+    else
+      renderAsciiImage(image, request, response)
 
 renderAsciiImage = (imageSource, request, response) ->
   image = new Canvas.Image
