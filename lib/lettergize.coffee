@@ -34,40 +34,45 @@ renderImage = (error, image, request, response) ->
       renderAsciiImage(image, request, response)
 
 renderAsciiImage = (imageSource, request, response) ->
+  createImage imageSource, (error, image) ->
+    if error?
+      console.error('Image failed to load', error)
+      response.status(400).send('Image failed to load')
+    else
+      canvas = new Canvas(image.width, image.height)
+      canvasWidth = canvas.width
+      canvasHeight = canvas.height
+      context = canvas.getContext('2d')
+      context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
+
+      characters = [' ', '.', ':', 'i', '1', 't', 'f', 'L', 'C', 'G', '0', '8', '@']
+
+      imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
+      fontSize = 5
+      outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
+      outputContext = outputCanvas.getContext('2d')
+      outputContext.font = "#{fontSize}px monospace"
+      lineOffset = 0
+      contrast = parseInt(request.query.contrast) or 128
+      for y in [0...canvasHeight] by 2
+        line = ''
+        for x in [0...canvasWidth]
+          offset = (y * canvasWidth + x) * 4
+          color = getColorAtOffset(imageData.data, offset)
+          index = getIndexForColor(color, contrast, characters.length)
+          line += characters[index]
+
+        outputContext.fillText(line, 0, lineOffset)
+        lineOffset += fontSize
+
+      response.set('Content-Type', 'image/png')
+      response.status(200).send(outputCanvas.toBuffer())
+
+createImage = (source, callback) ->
   image = new Canvas.Image
-  image.onerror = (error) ->
-    console.error('Image failed to load', error)
-    response.status(400).send('Image failed to load')
-  image.onload = ->
-    canvas = new Canvas(image.width, image.height)
-    canvasWidth = canvas.width
-    canvasHeight = canvas.height
-    context = canvas.getContext('2d')
-    context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
-
-    characters = [' ', '.', ':', 'i', '1', 't', 'f', 'L', 'C', 'G', '0', '8', '@']
-
-    imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
-    fontSize = 5
-    outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
-    outputContext = outputCanvas.getContext('2d')
-    outputContext.font = "#{fontSize}px monospace"
-    lineOffset = 0
-    contrast = parseInt(request.query.contrast) or 128
-    for y in [0...canvasHeight] by 2
-      line = ''
-      for x in [0...canvasWidth]
-        offset = (y * canvasWidth + x) * 4
-        color = getColorAtOffset(imageData.data, offset)
-        index = getIndexForColor(color, contrast, characters.length)
-        line += characters[index]
-
-      outputContext.fillText(line, 0, lineOffset)
-      lineOffset += fontSize
-
-    response.set('Content-Type', 'image/png')
-    response.status(200).send(outputCanvas.toBuffer())
-  image.src = imageSource
+  image.onerror = (error) -> callback(error)
+  image.onload = -> callback(null, image)
+  image.src = source
 
 loadEmojiImages = (emojis, callback) ->
   emojiImages = []
@@ -75,12 +80,10 @@ loadEmojiImages = (emojis, callback) ->
   for emoji in emojis
     do (emoji) ->
       loadOperations.push (callback) ->
-        image = new Canvas.Image
-        image.onerror = (error) -> callback(error)
-        image.onload = ->
-          emojiImages.push(image)
-          callback()
-        image.src = fs.readFileSync(path.join(__dirname, '..', 'emojis', "#{emoji}.png"))
+        source = fs.readFileSync(path.join(__dirname, '..', 'emojis', "#{emoji}.png"))
+        createImage source, (error, image) ->
+          emojiImages.push(image) unless error?
+          callback(error)
 
   async.waterfall loadOperations, (error) ->
     if error?
@@ -89,42 +92,41 @@ loadEmojiImages = (emojis, callback) ->
       callback(null, emojiImages)
 
 renderEmojiImage = (imageSource, request, response) ->
-  image = new Canvas.Image
-  image.onerror = (error) ->
-    console.error('Image failed to load', error)
-    response.status(400).send('Image failed to load')
-  image.onload = ->
-    canvasWidth = parseInt(request.query.width) or image.width
-    canvasHeight = parseInt(request.query.height) or image.height
-    canvas = new Canvas(canvasWidth, canvasHeight)
-    context = canvas.getContext('2d')
-    context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
+  createImage imageSource, (error, image) ->
+    if error?
+      console.error('Image failed to load', error)
+      response.status(400).send('Image failed to load')
+    else
+      canvasWidth = parseInt(request.query.width) or image.width
+      canvasHeight = parseInt(request.query.height) or image.height
+      canvas = new Canvas(canvasWidth, canvasHeight)
+      context = canvas.getContext('2d')
+      context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
 
-    emojis = ['trollface', 'suspect', 'shipit', 'zap', 'punch', 'cloud', 'fire', 'sheep', 'metal', 'heart', 'gem', 'pear', 'poop']
-    loadEmojiImages emojis, (error, emojiImages) ->
-      if error?
-        response.status(400).send('Emojis failed to load')
-      else
-        imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
-        emojiSize = parseInt(request.query.emojiSize) or 10
-        outputCanvas = new Canvas(canvasWidth * emojiSize, canvasHeight * emojiSize)
-        outputContext = outputCanvas.getContext('2d')
-        rowOffset = 0
-        contrast = parseInt(request.query.contrast) or 128
-        for y in [0...canvasHeight] by 2
-          columnOffset = 0
-          for x in [0...canvasWidth]
-            offset = (y * canvasWidth + x) * 4
-            color = getColorAtOffset(imageData.data, offset)
-            index = getIndexForColor(color, contrast, emojis.length)
-            outputContext.drawImage(emojiImages[index], columnOffset, rowOffset, emojiSize, emojiSize)
-            columnOffset += emojiSize
+      emojis = ['trollface', 'suspect', 'shipit', 'zap', 'punch', 'cloud', 'fire', 'sheep', 'metal', 'heart', 'gem', 'pear', 'poop']
+      loadEmojiImages emojis, (error, emojiImages) ->
+        if error?
+          response.status(400).send('Emojis failed to load')
+        else
+          imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
+          emojiSize = parseInt(request.query.emojiSize) or 10
+          outputCanvas = new Canvas(canvasWidth * emojiSize, canvasHeight * emojiSize)
+          outputContext = outputCanvas.getContext('2d')
+          rowOffset = 0
+          contrast = parseInt(request.query.contrast) or 128
+          for y in [0...canvasHeight] by 2
+            columnOffset = 0
+            for x in [0...canvasWidth]
+              offset = (y * canvasWidth + x) * 4
+              color = getColorAtOffset(imageData.data, offset)
+              index = getIndexForColor(color, contrast, emojis.length)
+              outputContext.drawImage(emojiImages[index], columnOffset, rowOffset, emojiSize, emojiSize)
+              columnOffset += emojiSize
 
-          rowOffset += emojiSize
+            rowOffset += emojiSize
 
-        response.set('Content-Type', 'image/png')
-        response.status(200).send(outputCanvas.toBuffer())
-  image.src = imageSource
+          response.set('Content-Type', 'image/png')
+          response.status(200).send(outputCanvas.toBuffer())
 
 fetchImage = (url, callback) ->
   options = {url, encoding: null}
