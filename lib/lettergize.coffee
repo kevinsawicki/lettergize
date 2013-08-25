@@ -94,9 +94,9 @@ renderEmojiImage = (imageSource, request, response) ->
     console.error('Image failed to load', error)
     response.status(400).send('Image failed to load')
   image.onload = ->
-    canvas = new Canvas(image.width, image.height)
-    canvasWidth = canvas.width
-    canvasHeight = canvas.height
+    canvasWidth = parseInt(request.query.width) or image.width
+    canvasHeight = parseInt(request.query.height) or image.height
+    canvas = new Canvas(canvasWidth, canvasHeight)
     context = canvas.getContext('2d')
     context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
 
@@ -106,7 +106,7 @@ renderEmojiImage = (imageSource, request, response) ->
         response.status(400).send('Emojis failed to load')
       else
         imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
-        emojiSize = 10
+        emojiSize = parseInt(request.query.emojiSize) or 10
         outputCanvas = new Canvas(canvasWidth * emojiSize, canvasHeight * emojiSize)
         outputContext = outputCanvas.getContext('2d')
         rowOffset = 0
