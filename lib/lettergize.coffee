@@ -39,34 +39,43 @@ renderAsciiImage = (imageSource, request, response) ->
       console.error('Image failed to load', error)
       response.status(400).send('Image failed to load')
     else
-      canvas = new Canvas(image.width, image.height)
-      canvasWidth = canvas.width
-      canvasHeight = canvas.height
+      canvasWidth = parseInt(request.query.width) or image.width
+      canvasHeight = parseInt(request.query.height) or image.height
+      canvas = new Canvas(canvasWidth, canvasHeight)
       context = canvas.getContext('2d')
       context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
 
-      characters = [' ', '.', ':', 'i', '1', 't', 'f', 'L', 'C', 'G', '0', '8', '@']
+      if request.query.type is 'octicons'
+        characters = [' ', '\uf02a', '\uf026', '\uf09d', '\uf01f', '\uf00e', '\uf0b2', '\uf009', '\uf069', '\uf02b', '\uf04e', '\uf020', '\uf008']
+        fontSize = 12
+        outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
+        outputContext = outputCanvas.getContext('2d')
+        outputContext.font = "#{fontSize}px Octicons"
+      else
+        characters = [' ', '.', ':', 'i', '1', 't', 'f', 'L', 'C', 'G', '0', '8', '@']
+        fontSize = 5
+        outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
+        outputContext = outputCanvas.getContext('2d')
+        outputContext.font = "#{fontSize}px monospace"
 
       imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
-      fontSize = 5
-      outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
-      outputContext = outputCanvas.getContext('2d')
-      outputContext.font = "#{fontSize}px monospace"
-      lineOffset = 0
+      rowOffset = 0
+      columnOffset = 0
       contrast = parseInt(request.query.contrast) or 128
       for y in [0...canvasHeight] by 2
-        line = ''
+        columnOffset = 0
         for x in [0...canvasWidth]
           offset = (y * canvasWidth + x) * 4
           color = getColorAtOffset(imageData.data, offset)
           index = getIndexForColor(color, contrast, characters.length)
-          line += characters[index]
+          outputContext.fillText(characters[index], columnOffset, rowOffset)
+          columnOffset += fontSize
 
-        outputContext.fillText(line, 0, lineOffset)
-        lineOffset += fontSize
+        rowOffset += fontSize
 
       response.set('Content-Type', 'image/png')
       response.status(200).send(outputCanvas.toBuffer())
+
 
 createImage = (source, callback) ->
   image = new Canvas.Image
