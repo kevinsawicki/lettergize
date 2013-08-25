@@ -1,0 +1,35 @@
+{
+  "name": "lettergize",
+  "version": "0.0.0",
+  "description": "Convert an image to ASCII art",
+  "main": "./lib/lettergize.coffee",
+  "scripts": {
+    "test": "jasmine-focused --coffee --captureExceptions spec",
+    "start": "coffee ./lib/lettergize.coffee"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kevinsawicki/lettergize.git"
+  },
+  "homepage": "http://kevinsawicki.github.io/lettergize",
+  "author": {
+    "name": "Kevin Sawicki",
+    "email": "kevinsawicki@gmail.com"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/kevinsawicki/grunt-cson/raw/master/LICENSE.md"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/kevinsawicki/lettergize/issues"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6.3",
+    "express": "~3.3.5"
+  },
+  "devDependencies": {
+    "jasmine-focused": "~0.12.0"
+  }
+}
