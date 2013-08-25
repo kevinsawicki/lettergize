@@ -125,7 +125,21 @@ renderEmojiImage = (imageSource, request, response) ->
       context = canvas.getContext('2d')
       context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
 
-      emojis = ['trollface', 'suspect', 'shipit', 'zap', 'punch', 'cloud', 'fire', 'sheep', 'metal', 'heart', 'gem', 'pear', 'poop']
+      emojis = [
+        'trollface'
+        'cloud'
+        'zap'
+        'sheep'
+        'punch'
+        'pear'
+        'shipit'
+        'fire'
+        'metal'
+        'heart'
+        'suspect'
+        'gem'
+        'poop'
+      ]
       loadEmojiImages emojis, (error, emojiImages) ->
         if error?
           response.status(400).send('Emojis failed to load')
