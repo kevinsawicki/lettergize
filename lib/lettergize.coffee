@@ -46,7 +46,20 @@ renderAsciiImage = (imageSource, request, response) ->
       context.drawImage(image, 0, 0, canvasWidth, canvasHeight)
 
       if request.query.type is 'octicons'
-        characters = [' ', '\uf02a', '\uf026', '\uf09d', '\uf01f', '\uf00e', '\uf0b2', '\uf009', '\uf069', '\uf02b', '\uf04e', '\uf020', '\uf008']
+        characters = [
+          ' '
+          '\uf01f' # commit
+          '\uf015' # tag
+          '\uf020' # branch
+          '\uf009' # pull request
+          '\uf026' # issue opened
+          '\uf04e' # eye
+          '\uf069' # beer
+          '\uf02b' # comment
+          '\uf0b2' # squirrel
+          '\uf02a' # start
+          '\uf008' # octocat
+        ]
         fontSize = 12
         outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
         outputContext = outputCanvas.getContext('2d')
