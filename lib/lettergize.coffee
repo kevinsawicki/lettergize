@@ -61,16 +61,15 @@ renderAsciiImage = (imageSource, request, response) ->
           '\uf008' # octocat
         ]
         fontSize = 12
-        outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
-        outputContext = outputCanvas.getContext('2d')
-        outputContext.font = "#{fontSize}px Octicons"
+        font = "#{fontSize}px Octicons"
       else
         characters = [' ', '.', ':', 'i', '1', 't', 'f', 'L', 'C', 'G', '0', '8', '@']
         fontSize = 5
-        outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
-        outputContext = outputCanvas.getContext('2d')
-        outputContext.font = "#{fontSize}px monospace"
+        font = "#{fontSize}px monospace"
 
+      outputCanvas = new Canvas(canvasWidth * fontSize, canvasHeight * fontSize)
+      outputContext = outputCanvas.getContext('2d')
+      outputContext.font = font
       imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
       rowOffset = 0
       columnOffset = 0
@@ -146,7 +145,7 @@ renderEmojiImage = (imageSource, request, response) ->
         else
           imageData = context.getImageData(0, 0, canvasWidth, canvasHeight)
           emojiSize = parseInt(request.query.emojiSize) or 10
-          outputCanvas = new Canvas(canvasWidth * emojiSize, canvasHeight * emojiSize)
+          outputCanvas = new Canvas(canvasWidth   * emojiSize, canvasHeight * emojiSize)
           outputContext = outputCanvas.getContext('2d')
           rowOffset = 0
           contrast = parseInt(request.query.contrast) or 128
